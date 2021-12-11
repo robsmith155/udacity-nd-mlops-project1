@@ -4,3 +4,6 @@ pylint
 autopep8
 seaborn
 matplotlib
+notebook
+pyyaml
+python-box

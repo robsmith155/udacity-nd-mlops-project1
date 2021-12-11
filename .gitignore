@@ -1,6 +1,9 @@
 # Ignore pipenv files
 Pipfile*
 
+# Ignore temporary files
+tmp*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
