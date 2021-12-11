@@ -1,6 +1,7 @@
 import os
 import logging
 import yaml
+import pandas as pd
 from box import Box
 import churn_library as cls
 
@@ -98,19 +99,27 @@ class TestCustomerChurn(cls.CustomerChurn):
 			logging.error(f"Testing perform_feature_engineering: Expected {len(encoded_feature_names)} new columns but only got {len(intersection)}.")
 			raise err
 			
-			
+	def test_prepare_training_data(self) -> None:
+		'''
+		Test that the prepare_training_data method creates the training and test datasets
+		'''
+		try:
+			self.prepare_training_data(training_features_lst=config.prepare_data.training_features,
+                              		   target=config.prepare_data.target,
+                                   	   test_size=config.prepare_data.test_size,
+                                       random_state=config.prepare_data.random_state)
+   
+			assert isinstance(self.X_train, pd.DataFrame)
+			assert isinstance(self.X_test, pd.DataFrame)
+			assert isinstance(self.y_train, pd.Series)
+			assert isinstance(self.y_test, pd.Series)
+			logging.info("Testing prepare_training_data: Training and test datasets successfully created")
+		except AssertionError as err:
+			logging.error(f"Testing prepare_training_data: Unexpected output data types. X_train type is {type(self.X_train)}, expected pd.DataFrame.\
+       					X_test type is {type(self.X_test)}, expected pd.DataFrame. y_train type is {type(self.y_train)}, expected pd.Series. y_test type is\
+           				{type(self.y_test)}, expected pd.Series.")
 
 
-# def test_encoder_helper(encoder_helper):
-# 	'''
-# 	test encoder helper
-# 	'''
-
-
-# def test_perform_feature_engineering(perform_feature_engineering):
-# 	'''
-# 	test perform_feature_engineering
-# 	'''
 
 
 # def test_train_models(train_models):
@@ -127,6 +136,7 @@ if __name__ == "__main__":
 	churn_test.test_create_churn_feature()
 	churn_test.test_perform_eda()
 	churn_test.test_perform_feature_engineering()
+	churn_test.test_prepare_training_data()
 
 
 

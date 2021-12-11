@@ -110,25 +110,29 @@ class CustomerChurn:
             for val in self.df[feature]:
                 encoded_feature_lst.append(feature_groups.loc[val])
             self.df[encoded_name] = encoded_feature_lst
+            
+    def prepare_training_data(self, training_features_lst: list, target: str, test_size: float, random_state: int) -> None:
+        '''
+        Split data into training and test datasets ready for training.
 
+        Args:
+            training_features_lst (list): List of columns used as input features for training
+            target (str): Name of column to use as target in training
+            test_size (float): Proportion of data to set aside for testing
+            random_state (int): Set the random state for reproducible workflow
+        '''
+        X = self.df[training_features_lst]
+        y = self.df[target]
+        
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+            X,
+            y,
+            test_size=test_size,
+            random_state=random_state
+        )
+        
+        
 
-
-
-
-
-
-# def perform_feature_engineering(df, response):
-#     '''
-#     input:
-#               df: pandas dataframe
-#               response: string of response name [optional argument that could be used for naming variables or index y column]
-
-#     output:
-#               X_train: X training data
-#               X_test: X testing data
-#               y_train: y training data
-#               y_test: y testing data
-#     '''
 
 # def classification_report_image(y_train,
 #                                 y_test,
@@ -198,4 +202,10 @@ if __name__ == '__main__':
     churn.perform_eda(histogram_features=config.eda.plot_histograms,
                     output_dir=config.eda.output_dir)
     churn.perform_feature_engineering(category_lst=config.feature_engineering.categorical_columns)
-    print(churn.df.columns)
+    churn.prepare_training_data(training_features_lst=config.prepare_data.training_features,
+                                target=config.prepare_data.target,
+                                test_size=config.prepare_data.test_size,
+                                random_state=config.prepare_data.random_state)
+    
+    print(churn.X_train.shape)
+    print(type(churn.y_train))
