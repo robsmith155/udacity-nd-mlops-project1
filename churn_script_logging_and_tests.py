@@ -25,10 +25,10 @@ class TestCustomerChurn(cls.CustomerChurn):
 		Test that the import_data method correctly loads the data.
 		'''
 		try:
-			self.import_data(filepath=config.data.raw_filepath)
+			self.import_data(filepath=config.testing.data_filepath)
 			logging.info("Testing import_data: File loaded successfully")
 		except FileNotFoundError as err:
-			logging.error(f"Testing import_data: The file {config.data.raw_filepath} wasn't found")
+			logging.error(f"Testing import_data: The file {config.testing.data_filepath} wasn't found")
 			raise err
 
 		try:
@@ -49,7 +49,16 @@ class TestCustomerChurn(cls.CustomerChurn):
 			logging.info("Testing create_churn_feature: Feature successfully created")
 		except AssertionError as err:
 			logging.error("Testing create_churn_feature: A feature named Churn does not exist in self.df")
-			
+			raise err
+		
+		try:
+			assert self.df['Churn'].min() == 0.0
+			assert self.df['Churn'].max() == 1.0
+			logging.info("Testing create_churn_feature: Verified min and max value of Churn column are 0.0 and 1.0 respectively")
+		except AssertionError as err:
+			logging.error(f"Testing create_churn_feature: Expected min and max values of Churn column to be 0.0 and 1.0, but got {self.df['Churn'].min()} and {self.df['Churn'].max()}")
+			raise err
+
 	def test_perform_eda(self) -> None:
 		'''
 		Test that the perform_eda method outputs all the EDA images
@@ -67,6 +76,29 @@ class TestCustomerChurn(cls.CustomerChurn):
 			logging.info(f"Testing perform_eda: A total of {len(os.listdir(output_dir))} plots were successfully saved to {output_dir}")
 		except AssertionError as err:
 			logging.error(f"Testing perform_eda: Expected {expected_num_plots} plots in {output_dir}, but only found {len(os.listdir(output_dir))}")
+			raise err
+   
+	def test_perform_feature_engineering(self) -> None:
+		'''
+		Test that the perform_feature_engineering method created the encoded categorical features.
+		'''
+		if isinstance(config.feature_engineering.encoded_cat_names, list):
+			encoded_feature_names = config.feature_engineering.encoded_cat_names
+		else:
+			encoded_feature_names = []
+			for feature in config.feature_engineering.categorical_columns:
+				encoded_feature_names.append(f'{feature}_Churn')
+		logging.info(f"Testing perform_feature_engineering: Encoded feature names {encoded_feature_names}")
+		try:
+			self.perform_feature_engineering(category_lst=config.feature_engineering.categorical_columns)
+			intersection = set(encoded_feature_names).intersection(set(self.df.columns))
+			assert len(encoded_feature_names) - len(intersection) == 0
+			logging.info("Testing perform_feature_engineering: Encoded categorical features successfully created")
+		except AssertionError as err:
+			logging.error(f"Testing perform_feature_engineering: Expected {len(encoded_feature_names)} new columns but only got {len(intersection)}.")
+			raise err
+			
+			
 
 
 # def test_encoder_helper(encoder_helper):
@@ -94,6 +126,7 @@ if __name__ == "__main__":
 	churn_test.test_import_data()
 	churn_test.test_create_churn_feature()
 	churn_test.test_perform_eda()
+	churn_test.test_perform_feature_engineering()
 
 
 

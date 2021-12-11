@@ -7,3 +7,14 @@ matplotlib:
   small_size: 10
   medium_size: 14
   large_size: 16
+feature_engineering:
+  categorical_columns: [
+    'Gender',
+    'Education_Level',
+    'Marital_Status',
+    'Income_Category',
+    'Card_Category'                
+]
+  encoded_cat_names: None
+testing:
+  data_filepath:  './data/bank_data.csv'

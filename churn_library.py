@@ -17,6 +17,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import yaml
+from typing import Optional
 from box import Box
 from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
@@ -28,6 +29,9 @@ from sklearn.metrics import plot_roc_curve, classification_report
 class CustomerChurn:
     """
     This class enables a model to be trained from scratch for predicting customer churn.
+    
+    Attributes:
+        df (pd.DataFrame): DataFrame storing data
     """
     def __init__(self):
         self.df = None
@@ -36,15 +40,12 @@ class CustomerChurn:
         self.X_test = None
         self.y_test = None
 
-    def import_data(self, filepath: str) -> pd.DataFrame:
+    def import_data(self, filepath: str) -> None:
         '''
         Returns DataFrame for the csv found at filepath.
 
         Args:
             filepath (str): A path to the csv containing the data
-            
-        Returns:
-            None
         '''	
         self.df = pd.read_csv(filepath)
         
@@ -54,21 +55,15 @@ class CustomerChurn:
 
         Args:
             None
-            
-        Returns:
-            None
         '''	
         self.df['Churn'] = self.df['Attrition_Flag'].apply(lambda val: 0 if val == "Existing Customer" else 1)
     
-    def plot_distribution(self, feature:str, output_dir:str) -> None:
+    def plot_distribution(self, feature: str, output_dir: str) -> None:
         '''
         Plot and save histogram of specified feature in output_dir
 
         Args:
             feature (str): Name of feature to plot
-            
-        Returns:
-            None
         '''
         fig = plt.figure(figsize=(20,10))
         ax = sns.histplot(data=self.df[feature])
@@ -77,16 +72,13 @@ class CustomerChurn:
         img_path = os.path.join(output_dir, filename)
         plt.savefig(fname=img_path, dpi=200, format='png')
     
-    def perform_eda(self, histogram_features:list, output_dir:str) -> None:
+    def perform_eda(self, histogram_features: list, output_dir: str) -> None:
         '''
         Perform EDA on the input data and save figfures to the output_dir
 
         Args:
-            output_dir (str): Directory to store the output images
             histogram_features (list): List of features to plot as histograms
-            
-        Returns:
-            None
+            output_dir (str): Directory to store the output images
         '''
         # Histograms
         for feature in histogram_features:
@@ -97,26 +89,32 @@ class CustomerChurn:
         sns.heatmap(self.df.corr(), annot=False, cmap='Dark2_r', linewidths = 2)
         img_path = os.path.join(output_dir, 'heatmap.png')
         plt.savefig(fname=img_path, dpi=200, format='png')
+        
+    def perform_feature_engineering(self, category_lst: list, encoded_name_lst: Optional[list] =  None) -> None:
+        '''
+        Turn each categorical column into a new feature with propotion of churn for each category
+
+        Args:
+            category_lst (list): List of columns containing categorical features
+            encoded_name_lst (Optional: list): List of names for encoded features from category_lst.
+                If passed must be the same length as category_lst and in corresponding order.
+        '''
+        for i, feature in enumerate(category_lst):
+            feature_groups = self.df.groupby(feature).mean()['Churn']
+            if encoded_name_lst is None:
+                encoded_name = f'{feature}_Churn'
+            else:
+                encoded_name = encoded_name_lst[i]
+                
+            encoded_feature_lst = []
+            for val in self.df[feature]:
+                encoded_feature_lst.append(feature_groups.loc[val])
+            self.df[encoded_name] = encoded_feature_lst
 
 
 
 
 
-
-# def encoder_helper(df, category_lst, response):
-#     '''
-#     helper function to turn each categorical column into a new column with
-#     propotion of churn for each category - associated with cell 15 from the notebook
-
-#     input:
-#             df: pandas dataframe
-#             category_lst: list of columns that contain categorical features
-#             response: string of response name [optional argument that could be used for naming variables or index y column]
-
-#     output:
-#             df: pandas dataframe with new columns for
-#     '''
-#     pass
 
 
 # def perform_feature_engineering(df, response):
@@ -199,3 +197,5 @@ if __name__ == '__main__':
     churn.create_churn_feature()
     churn.perform_eda(histogram_features=config.eda.plot_histograms,
                     output_dir=config.eda.output_dir)
+    churn.perform_feature_engineering(category_lst=config.feature_engineering.categorical_columns)
+    print(churn.df.columns)
