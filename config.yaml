@@ -1,0 +1,9 @@
+data:
+  raw_filepath: './data/bank_data.csv'
+eda:
+  output_dir: './images/eda'
+  plot_histograms: ['Churn', 'Customer_Age', 'Marital_Status', 'Total_Trans_Ct']
+matplotlib:
+  small_size: 10
+  medium_size: 14
+  large_size: 16
