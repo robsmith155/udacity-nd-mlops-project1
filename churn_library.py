@@ -39,6 +39,8 @@ class CustomerChurn:
         self.y_train = None
         self.X_test = None
         self.y_test = None
+        self.random_forest_gridcv = None
+        self.logistic_classifier = None
 
     def import_data(self, filepath: str) -> None:
         '''
@@ -130,7 +132,25 @@ class CustomerChurn:
             test_size=test_size,
             random_state=random_state
         )
-        
+    
+    def train_models(self, rf_param_grid: dict, num_cv_folds: int, random_state: int) -> None:
+        '''
+        Train the random forest and logistic regression models.
+
+        Args:
+            rf_param_grid (dict): Parameter grid for grid search of random forest hyperparameters
+            num_cv_folds (int): Number of cross-validation folds in training
+            random_state (int): Set the random state for reproducible workflow
+        '''
+        rf_classifier = RandomForestClassifier(random_state=random_state)
+        self.random_forest_gridcv = GridSearchCV(estimator=rf_classifier, param_grid=rf_param_grid, cv=num_cv_folds)
+        # The job failed with the default Logistic Regression solver, so was set to liblinear below
+        self.logistic_classifier = LogisticRegression(random_state=random_state, solver='liblinear')
+        print('Starting Random Forest grid search...')
+        self.random_forest_gridcv.fit(X=self.X_train, y=self.y_train)
+        print('Finished Random Forest grid search. Starting training Logistic Regression classifier...')
+        self.logistic_classifier.fit(X=self.X_train, y=self.y_train)
+        print('Finished training Logistic Regression classifier')
         
 
 
@@ -170,18 +190,7 @@ class CustomerChurn:
 #     '''
 #     pass
 
-# def train_models(X_train, X_test, y_train, y_test):
-#     '''
-#     train, store model results: images + scores, and store models
-#     input:
-#               X_train: X training data
-#               X_test: X testing data
-#               y_train: y training data
-#               y_test: y testing data
-#     output:
-#               None
-#     '''
-#     pass
+
 
 if __name__ == '__main__':
     # Load config file
@@ -206,6 +215,7 @@ if __name__ == '__main__':
                                 target=config.prepare_data.target,
                                 test_size=config.prepare_data.test_size,
                                 random_state=config.prepare_data.random_state)
+    churn.train_models(rf_param_grid=config.models.random_forest.param_grid,
+                       num_cv_folds=config.models.random_forest.num_cv_folds,
+                       random_state=config.models.random_state)
     
-    print(churn.X_train.shape)
-    print(type(churn.y_train))

@@ -3,6 +3,9 @@ import logging
 import yaml
 import pandas as pd
 from box import Box
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import roc_auc_score
 import churn_library as cls
 
 logging.basicConfig(
@@ -118,15 +121,46 @@ class TestCustomerChurn(cls.CustomerChurn):
 			logging.error(f"Testing prepare_training_data: Unexpected output data types. X_train type is {type(self.X_train)}, expected pd.DataFrame.\
        					X_test type is {type(self.X_test)}, expected pd.DataFrame. y_train type is {type(self.y_train)}, expected pd.Series. y_test type is\
            				{type(self.y_test)}, expected pd.Series.")
+			raise err
 
+	def test_train_models(self) -> None:
+		'''
+		Test that the prepare_train_models method creates the Random Forest and Logistic Regression models
+		'''
+		try:
+			self.train_models(rf_param_grid=config.models.random_forest.param_grid,
+                     		  num_cv_folds=config.models.random_forest.num_cv_folds,
+                         	  random_state=config.models.random_state)
+	
+			assert isinstance(self.random_forest_gridcv, GridSearchCV)
+			logging.info("Testing train_models: Random Forest model created and of correct type")
+		except AssertionError as err:
+			logging.error(f"Expected Random Forest model to be of the type GridSearchCV, but returned {type(self.random_forest_gridcv)}")
+			raise err
 
+		try:
+			assert isinstance(self.logistic_classifier, LogisticRegression)
+			logging.info("Testing train_models: Logistic Regression model created and of correct type")
+		except AssertionError as err:
+			logging.error(f"Expected Logistic Regression model to be of the type LogisticRegression, but returned {type(self.logistic_classifier)}")
+			raise err
+		try:
+			y_test_preds_rf = self.random_forest_gridcv.best_estimator_.predict(self.X_test)
+			best_rf_auc_score = roc_auc_score(y_true=self.y_test, y_score=y_test_preds_rf)
+			assert best_rf_auc_score > 0.85
+			logging.info(f"Testing train models: Random Forest best AUC score of {best_rf_auc_score}. Performance okay.")
+		except AssertionError as err:
+			logging.error(f"Testing train models: Best Random Forest AUC score of {best_rf_auc_score} does not meet expectations.")
+			raise err
 
-
-# def test_train_models(train_models):
-# 	'''
-# 	test train_models
-# 	'''
-
+		try:
+			y_test_preds_logistic = self.logistic_classifier.predict(self.X_test)
+			logistic_auc_score = roc_auc_score(y_true=self.y_test, y_score=y_test_preds_logistic)
+			assert logistic_auc_score > 0.65
+			logging.info(f"Testing train models: Logistic Regression model AUC score of {logistic_auc_score}. Performance okay.")
+		except AssertionError as err:
+			logging.error(f"Testing train models: Logistic Regression model AUC score of {logistic_auc_score} does not meet expectations.")
+			raise err
 
 if __name__ == "__main__":
     
@@ -137,6 +171,7 @@ if __name__ == "__main__":
 	churn_test.test_perform_eda()
 	churn_test.test_perform_feature_engineering()
 	churn_test.test_prepare_training_data()
+	churn_test.test_train_models()
 
 
 

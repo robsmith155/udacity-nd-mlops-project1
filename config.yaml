@@ -26,6 +26,16 @@ prepare_data:
              'Income_Category_Churn', 'Card_Category_Churn']
   target: 'Churn'
   test_size: 0.3
-  random_state: 42  
+  random_state: 42
+models:
+  random_state: 42
+  random_forest:
+    param_grid: { 
+    'n_estimators': [200, 500],
+    'max_features': ['auto', 'sqrt'],
+    'max_depth' : [4,5,100],
+    'criterion' :['gini', 'entropy']
+    }
+    num_cv_folds: 5
 testing:
   data_filepath:  './data/bank_data.csv'
