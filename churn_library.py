@@ -25,6 +25,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import plot_roc_curve, classification_report
+import dataframe_image as dfi
 
 class CustomerChurn:
     """
@@ -32,6 +33,12 @@ class CustomerChurn:
     
     Attributes:
         df (pd.DataFrame): DataFrame storing data
+        y_train (pd.Series): training response values
+        y_test (pd.Series):  test response values
+        y_train_preds_lr (np.ndarray): training predictions from logistic regression
+        y_train_preds_rf (np.ndarray): training predictions from random forest
+        y_test_preds_lr (np.ndarray): test predictions from logistic regression
+        y_test_preds_rf (np.ndarray): test predictions from random forest
     """
     def __init__(self):
         self.df = None
@@ -41,6 +48,10 @@ class CustomerChurn:
         self.y_test = None
         self.random_forest_gridcv = None
         self.logistic_classifier = None
+        self.y_train_preds_rf = None
+        self.y_train_preds_lr = None
+        self.y_test_preds_rf = None
+        self.y_test_preds_lr = None
 
     def import_data(self, filepath: str) -> None:
         '''
@@ -151,30 +162,43 @@ class CustomerChurn:
         print('Finished Random Forest grid search. Starting training Logistic Regression classifier...')
         self.logistic_classifier.fit(X=self.X_train, y=self.y_train)
         print('Finished training Logistic Regression classifier')
+    
+    def make_predictions(self) -> None:
+        '''
+        Use trained models to predict training and test data.
+
+        Args:
+            None
+        '''
+        self.y_train_preds_rf = self.random_forest_gridcv.best_estimator_.predict(self.X_train)
+        self.y_test_preds_rf = self.random_forest_gridcv.best_estimator_.predict(self.X_test)
+        self.y_train_preds_lr = self.logistic_classifier.predict(self.X_train)
+        self.y_test_preds_lr = self.logistic_classifier.predict(self.X_test)
+           
+    def classification_report_image(self, output_path: str) -> None:
+        '''
+        Produces classification reports for training and testing results and stores report as image
+        in images folder.
         
-
-
-# def classification_report_image(y_train,
-#                                 y_test,
-#                                 y_train_preds_lr,
-#                                 y_train_preds_rf,
-#                                 y_test_preds_lr,
-#                                 y_test_preds_rf):
-#     '''
-#     produces classification report for training and testing results and stores report as image
-#     in images folder
-#     input:
-#             y_train: training response values
-#             y_test:  test response values
-#             y_train_preds_lr: training predictions from logistic regression
-#             y_train_preds_rf: training predictions from random forest
-#             y_test_preds_lr: test predictions from logistic regression
-#             y_test_preds_rf: test predictions from random forest
-
-#     output:
-#              None
-#     '''
-#     pass
+        Args:
+            output_path (str): Path of directory to save the outputs.
+        '''
+        report_rf_train = classification_report(y_true=self.y_train, y_pred=self.y_train_preds_rf, output_dict=True)
+        output_filepath = f'{output_path}/rf_train_report.png'
+        dfi.export(pd.DataFrame(report_rf_train).T, output_filepath)
+        
+        report_rf_test = classification_report(y_true=self.y_test, y_pred=self.y_test_preds_rf, output_dict=True)
+        output_filepath = f'{output_path}/rf_test_report.png'
+        dfi.export(pd.DataFrame(report_rf_test).T, output_filepath)
+        
+        report_lr_train = classification_report(y_true=self.y_train, y_pred=self.y_train_preds_lr, output_dict=True)
+        output_filepath = f'{output_path}/lr_train_report.png'
+        dfi.export(pd.DataFrame(report_lr_train).T, output_filepath)
+        
+        report_lr_test = classification_report(y_true=self.y_test, y_pred=self.y_test_preds_lr, output_dict=True)
+        output_filepath = f'{output_path}/lr_test_report.png'
+        dfi.export(pd.DataFrame(report_lr_test).T, output_filepath)
+        
 
 
 # def feature_importance_plot(model, X_data, output_pth):
@@ -218,4 +242,6 @@ if __name__ == '__main__':
     churn.train_models(rf_param_grid=config.models.random_forest.param_grid,
                        num_cv_folds=config.models.random_forest.num_cv_folds,
                        random_state=config.models.random_state)
+    churn.make_predictions()
+    churn.classification_report_image(output_path=config.classification_report.output_path)
     

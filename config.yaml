@@ -37,5 +37,7 @@ models:
     'criterion' :['gini', 'entropy']
     }
     num_cv_folds: 5
+classification_report:
+  output_path: './images/results'
 testing:
   data_filepath:  './data/bank_data.csv'

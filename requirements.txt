@@ -7,3 +7,4 @@ matplotlib
 notebook
 pyyaml
 python-box
+dataframe-image
