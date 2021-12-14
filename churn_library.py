@@ -1,4 +1,4 @@
-# library doc string
+
 """
 This module
 
@@ -87,7 +87,7 @@ class CustomerChurn:
     
     def perform_eda(self, histogram_features: list, output_dir: str) -> None:
         '''
-        Perform EDA on the input data and save figfures to the output_dir
+        Perform EDA on the input data and save figures to the output_dir
 
         Args:
             histogram_features (list): List of features to plot as histograms
@@ -199,6 +199,31 @@ class CustomerChurn:
         output_filepath = f'{output_path}/lr_test_report.png'
         dfi.export(pd.DataFrame(report_lr_test).T, output_filepath)
         
+    
+    def output_roc_curves(self, output_path: str) -> None:
+        '''
+        Produces receiver operating characteristic (ROC) curve plots for training and testing results 
+        and stores figures as images in the output directory.
+        
+        Args:
+            output_path (str): Path of directory to save the outputs.
+        '''
+        # Training data
+        plt.figure(figsize=(15, 8))
+        ax = plt.gca()
+        plot_roc_curve(self.random_forest_gridcv.best_estimator_, self.X_train, self.y_train, ax=ax, alpha=0.8)
+        plot_roc_curve(self.logistic_classifier, self.X_train, self.y_train, ax=ax, alpha=0.8)
+        img_path = f'{output_path}/training_roc_curve_result.png'
+        plt.savefig(fname=img_path, dpi=200, format='png')
+        
+        # Test data
+        plt.figure(figsize=(15, 8))
+        ax = plt.gca()
+        plot_roc_curve(self.random_forest_gridcv.best_estimator_, self.X_test, self.y_test, ax=ax, alpha=0.8)
+        plot_roc_curve(self.logistic_classifier, self.X_test, self.y_test, ax=ax, alpha=0.8)
+        img_path = f'{output_path}/test_roc_curve_result.png'
+        plt.savefig(fname=img_path, dpi=200, format='png')
+        
 
 
 # def feature_importance_plot(model, X_data, output_pth):
@@ -244,4 +269,5 @@ if __name__ == '__main__':
                        random_state=config.models.random_state)
     churn.make_predictions()
     churn.classification_report_image(output_path=config.classification_report.output_path)
+    churn.output_roc_curves(output_path=config.classification_report.output_path)
     
