@@ -199,7 +199,6 @@ class CustomerChurn:
         output_filepath = f'{output_path}/lr_test_report.png'
         dfi.export(pd.DataFrame(report_lr_test).T, output_filepath)
         
-    
     def output_roc_curves(self, output_path: str) -> None:
         '''
         Produces receiver operating characteristic (ROC) curve plots for training and testing results 
@@ -223,24 +222,41 @@ class CustomerChurn:
         plot_roc_curve(self.logistic_classifier, self.X_test, self.y_test, ax=ax, alpha=0.8)
         img_path = f'{output_path}/test_roc_curve_result.png'
         plt.savefig(fname=img_path, dpi=200, format='png')
+
+    def output_feature_importance_plot(self, output_path: str) -> None:
+        '''
+        Creates and stores the feature importances from the random forest best model in output_path
         
+        Args:
+            output_path (str): Path of directory to save the outputs.
+        '''
+        importances = self.random_forest_gridcv.best_estimator_.feature_importances_
+        # Sort feature importances in descending order
+        indices = np.argsort(importances)[::-1]
 
+        # Rearrange feature names so they match the sorted feature importances
+        names = [self.X_train.columns[i] for i in indices]
 
-# def feature_importance_plot(model, X_data, output_pth):
-#     '''
-#     creates and stores the feature importances in pth
-#     input:
-#             model: model object containing feature_importances_
-#             X_data: pandas dataframe of X values
-#             output_pth: path to store the figure
-
-#     output:
-#              None
-#     '''
-#     pass
-
-
-
+        # Create plot
+        plt.figure(figsize=(20,10))
+        plt.title("Feature Importance")
+        plt.ylabel('Importance')
+        plt.bar(range(self.X_train.shape[1]), importances[indices])
+        plt.xticks(range(self.X_train.shape[1]), names, rotation=90)
+        
+        img_path = f'{output_path}/rf_feature_importances.png'
+        plt.savefig(fname=img_path, dpi=200, format='png')
+        
+    def save_models(self, output_path: str) -> None:
+        '''
+        Saves the models in output_path
+        
+        Args:
+            output_path (str): Path of directory to save the models.
+        '''
+        joblib.dump(self.random_forest_gridcv.best_estimator_, f'{output_path}/rfc_model.pkl')
+        joblib.dump(self.logistic_classifier, f'{output_path}/logistic_model.pkl')
+    
 if __name__ == '__main__':
     # Load config file
     with open("config.yaml", "r") as ymlfile:
@@ -270,4 +286,6 @@ if __name__ == '__main__':
     churn.make_predictions()
     churn.classification_report_image(output_path=config.classification_report.output_path)
     churn.output_roc_curves(output_path=config.classification_report.output_path)
+    churn.output_feature_importance_plot(output_path=config.classification_report.output_path)
+    churn.save_models(output_path=config.models.output_path)
     

@@ -45,6 +45,7 @@ prepare_data:
   random_state: 42
 models:
   random_state: 42
+  output_path: './models'
   random_forest:
     param_grid:
       - 'n_estimators':
